@@ -52,3 +52,26 @@ body {
   border-color: var(--border);
 }
 
+/* Smooth scroll with navbar offset */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Scroll offset for sticky navbar */
+.scroll-offset {
+  scroll-margin-top: 80px;
+}
+
+/* Dot-grid background for How It Works and API sections */
+.dot-grid-bg {
+  background-image: radial-gradient(rgba(63, 63, 70, 0.2) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(to right, #ffffff, #a1a1aa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
