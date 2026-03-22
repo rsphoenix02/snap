@@ -9,7 +9,6 @@ const menuItems = [
     { name: 'Features', target: 'features' },
     { name: 'How It Works', target: 'how-it-works' },
     { name: 'API', target: 'api' },
-    { name: 'Stats', target: 'stats' },
 ]
 
 export const Header = () => {
@@ -41,7 +40,7 @@ export const Header = () => {
         <header>
             <nav className="fixed left-0 w-full z-20 px-2 flex justify-center pointer-events-none">
                 <motion.div
-                    initial={{ opacity: 0, y: -20 }}
+                    initial={{ opacity: 0, y: -20, maxWidth: 1280 }}
                     animate={{
                         opacity: mounted ? 1 : 0,
                         y: mounted ? 0 : -20,

@@ -223,7 +223,7 @@ export default function Home() {
       <HowItWorks />
 
       {/* ─── Section 4: Features (Bento Grid) ─── */}
-      <section id="features" className="scroll-offset relative py-24 lg:py-32">
+      <section id="features" className="scroll-offset relative pt-12 pb-24 lg:pt-16 lg:pb-32">
         <div className="mx-auto max-w-5xl px-6 lg:px-12">
           <div className="mb-16 max-w-2xl">
             <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">

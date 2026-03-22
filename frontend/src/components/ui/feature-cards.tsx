@@ -141,8 +141,8 @@ export const ShortCodesCard = () => {
             snap.dev/
           </div>
           <div
-            className="flex h-8 min-w-[90px] items-center rounded-r-md border border-l-0 border-red-500/30 bg-red-500/10 px-3 text-xs text-red-400"
-            style={{ fontFamily: "var(--font-geist-mono), monospace" }}
+            className="flex h-8 items-center rounded-r-md border border-l-0 border-red-500/30 bg-red-500/10 px-3 text-xs text-red-400"
+            style={{ fontFamily: "var(--font-geist-mono), monospace", width: "14ch", whiteSpace: "nowrap" }}
           >
             {typed}<span className="inline-block w-px h-3.5 bg-red-400 animate-pulse ml-px" />
           </div>
