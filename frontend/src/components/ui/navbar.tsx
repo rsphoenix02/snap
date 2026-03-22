@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const menuItems = [
     { name: 'Features', target: 'features' },
+    { name: 'How It Works', target: 'how-it-works' },
+    { name: 'API', target: 'api' },
     { name: 'Stats', target: 'stats' },
 ]
 
