@@ -10,7 +10,9 @@ steps:
       - 'gcr.io/$PROJECT_ID/snap-frontend:$COMMIT_SHA'
       - '-t'
       - 'gcr.io/$PROJECT_ID/snap-frontend:latest'
-      - '.'
+      - '-f'
+      - 'frontend/Dockerfile'
+      - 'frontend'
 
   # Push the image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
