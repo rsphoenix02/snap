@@ -5,6 +5,8 @@ build/
 .env
 .env.*
 *.tsbuildinfo
+.claude/
+.superpowers/
 ui_components/
 docs/superpowers/
 CLAUDE.md
