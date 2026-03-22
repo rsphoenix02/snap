@@ -21,7 +21,6 @@ import {
   Link2,
   Globe2,
   ArrowRight,
-  Terminal,
 } from "lucide-react";
 
 function StatItem({ icon, label }: { icon: React.ReactNode; label: string }) {
