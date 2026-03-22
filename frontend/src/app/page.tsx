@@ -3,7 +3,16 @@
 import { Header } from "@/components/ui/navbar";
 import { Globe } from "@/components/ui/globe";
 import { Marquee } from "@/components/ui/marquee";
-import { BentoGrid, BentoCard } from "@/components/ui/bento-grid";
+import { BentoGridShowcase } from "@/components/ui/bento-grid";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Zap,
   BarChart3,
@@ -12,6 +21,7 @@ import {
   Link2,
   Globe2,
   ArrowRight,
+  Terminal,
 } from "lucide-react";
 
 function StatItem({ icon, label }: { icon: React.ReactNode; label: string }) {
@@ -26,6 +36,95 @@ function StatItem({ icon, label }: { icon: React.ReactNode; label: string }) {
 function StatDivider() {
   return <span className="mx-2 text-zinc-700">&bull;</span>;
 }
+
+// --- Feature Cards (adapted from ui_components/bento_grid.md demo cards) ---
+
+const RedirectsCard = () => (
+  <Card className="flex h-full flex-col border-zinc-800/80 bg-zinc-900/50">
+    <CardHeader>
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10">
+        <Zap className="h-6 w-6 text-red-500" />
+      </div>
+      <CardTitle className="text-white">Lightning Redirects</CardTitle>
+      <CardDescription className="text-zinc-400">
+        Sub-100ms redirects powered by Redis caching and edge-optimized routing.
+        Your links resolve instantly across global points of presence.
+      </CardDescription>
+    </CardHeader>
+    <CardFooter className="mt-auto flex items-center justify-between">
+      <Badge variant="outline" className="border-red-500/30 text-red-400">
+        Redis-backed
+      </Badge>
+      <span className="text-xs text-zinc-500">50+ edge locations</span>
+    </CardFooter>
+  </Card>
+);
+
+const AnalyticsCard = () => (
+  <Card className="relative h-full w-full overflow-hidden border-zinc-800/80 bg-zinc-900/50">
+    {/* Dotted background — from original StatisticCard */}
+    <div
+      className="absolute inset-0 opacity-10"
+      style={{
+        backgroundImage:
+          "radial-gradient(rgba(239,68,68,0.5) 1px, transparent 1px)",
+        backgroundSize: "16px 16px",
+      }}
+    />
+    <CardContent className="relative z-10 flex h-full flex-col items-center justify-center p-6">
+      <span className="text-7xl font-bold text-red-500">98</span>
+      <span className="mt-1 text-sm text-zinc-400">ms avg redirect</span>
+    </CardContent>
+  </Card>
+);
+
+const ApiCard = () => (
+  <Card className="h-full border-zinc-800/80 bg-zinc-900/50">
+    <CardContent className="flex h-full flex-col justify-between p-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <CardTitle className="text-base font-medium text-white">
+            Developer API
+          </CardTitle>
+          <CardDescription className="text-zinc-400">
+            RESTful endpoints with SDKs
+          </CardDescription>
+        </div>
+        <Badge variant="outline" className="border-red-500/30 text-red-400">
+          REST
+        </Badge>
+      </div>
+      <div className="mt-4 rounded-lg bg-zinc-950/80 p-3 font-mono text-xs text-zinc-400">
+        <span className="text-red-400">POST</span> /api/v1/shorten
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const ShortCodesCard = () => (
+  <Card className="h-full border-zinc-800/80 bg-zinc-900/50">
+    <CardContent className="flex h-full flex-wrap items-center justify-between gap-4 p-6">
+      <div>
+        <CardTitle className="text-base font-medium text-white">
+          Custom Short Codes
+        </CardTitle>
+        <CardDescription className="text-zinc-400">
+          Claim branded URLs like snap.link/your-brand. Build trust with vanity
+          links.
+        </CardDescription>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 items-center rounded-md border border-zinc-700 bg-zinc-950/80 px-3 font-mono text-xs text-zinc-300">
+          <Link2 className="mr-2 h-3 w-3 text-red-500" />
+          snap.link/
+        </div>
+        <div className="flex h-8 items-center rounded-md border border-red-500/30 bg-red-500/10 px-3 font-mono text-xs text-red-400">
+          your-brand
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
 
 export default function Home() {
   return (
@@ -123,28 +222,12 @@ export default function Home() {
             </p>
           </div>
 
-          <BentoGrid>
-            <BentoCard
-              icon={<Zap className="h-5 w-5" />}
-              title="Fast Redirects"
-              description="Sub-100ms redirects powered by Redis caching and edge-optimized routing across global points of presence."
-            />
-            <BentoCard
-              icon={<BarChart3 className="h-5 w-5" />}
-              title="Real-Time Analytics"
-              description="Track clicks, referrers, geolocation, and device breakdowns with a live dashboard that updates in seconds."
-            />
-            <BentoCard
-              icon={<Code2 className="h-5 w-5" />}
-              title="Developer API"
-              description="RESTful API with API key auth, rate limiting, and SDKs for Python, Node, and Go. Automate everything."
-            />
-            <BentoCard
-              icon={<Fingerprint className="h-5 w-5" />}
-              title="Custom Short Codes"
-              description="Claim branded short codes like snap.link/your-brand. Vanity URLs that build trust and recognition."
-            />
-          </BentoGrid>
+          <BentoGridShowcase
+            primary={<RedirectsCard />}
+            secondary={<AnalyticsCard />}
+            tertiary={<ApiCard />}
+            wide={<ShortCodesCard />}
+          />
         </div>
       </section>
 
@@ -162,8 +245,8 @@ export default function Home() {
               GitHub
             </a>
             <span className="text-zinc-700">|</span>
-            <span className="text-xs text-zinc-600">
-              &copy; 2026 SNAP
+            <span className="flex items-center gap-1.5 text-xs text-zinc-600">
+              &copy; 2026 <Zap className="h-3 w-3 text-red-500 fill-red-500" /> SNAP
             </span>
           </div>
         </div>
