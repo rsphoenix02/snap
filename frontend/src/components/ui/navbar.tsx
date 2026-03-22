@@ -6,10 +6,8 @@ import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const menuItems = [
-    { name: 'Products', href: '#link' },
-    { name: 'Designs', href: '#link' },
-    { name: 'Pricing', href: '#link' },
-    { name: 'About', href: '#link' },
+    { name: 'Features', target: 'features' },
+    { name: 'Stats', target: 'stats' },
 ]
 
 export const Header = () => {
@@ -81,12 +79,14 @@ export const Header = () => {
                     {/* Nav links — desktop: absolutely centered */}
                     <div className="hidden lg:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
                         {menuItems.map((item, index) => (
-                            <Link
+                            <button
                                 key={index}
-                                href={item.href}
-                                className="text-zinc-400 text-sm hover:text-white transition-colors duration-300 whitespace-nowrap">
-                                <span>{item.name}</span>
-                            </Link>
+                                onClick={() => {
+                                    document.getElementById(item.target)?.scrollIntoView({ behavior: 'smooth' })
+                                }}
+                                className="text-zinc-400 text-sm hover:text-white transition-colors duration-300 whitespace-nowrap cursor-pointer">
+                                {item.name}
+                            </button>
                         ))}
                     </div>
 
@@ -119,42 +119,17 @@ export const Header = () => {
                     </button>
 
                     {/* CTA — pushed to far right */}
-                    <div className="lg:ml-auto flex items-center gap-2">
-                        <AnimatePresence mode="wait">
-                            {isScrolled ? (
-                                <motion.div
-                                    key="scrolled-cta"
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    transition={{ type: 'spring', stiffness: 200, damping: 20 }}>
-                                    <Button asChild size="sm">
-                                        <Link href="#">
-                                            <span>Get Started</span>
-                                        </Link>
-                                    </Button>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="top-ctas"
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                                    className="hidden lg:flex items-center gap-2">
-                                    <Button asChild variant="outline" size="sm">
-                                        <Link href="#">
-                                            <span>Login</span>
-                                        </Link>
-                                    </Button>
-                                    <Button asChild size="sm">
-                                        <Link href="#">
-                                            <span>Sign Up</span>
-                                        </Link>
-                                    </Button>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                    <div className="lg:ml-auto hidden lg:flex items-center gap-2">
+                        <Button asChild variant="outline" size="sm">
+                            <Link href="#">
+                                <span>Login</span>
+                            </Link>
+                        </Button>
+                        <Button asChild size="sm">
+                            <Link href="#">
+                                <span>Sign Up</span>
+                            </Link>
+                        </Button>
                     </div>
 
                     {/* Mobile dropdown menu */}
@@ -174,11 +149,16 @@ export const Header = () => {
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: -12 }}
                                             transition={{ delay: i * 0.05, type: 'spring', stiffness: 200, damping: 20 }}>
-                                            <Link
-                                                href={item.href}
-                                                className="text-zinc-400 text-sm py-2.5 px-2 rounded-lg hover:text-white hover:bg-white/[0.04] transition-colors duration-200 block">
-                                                <span>{item.name}</span>
-                                            </Link>
+                                            <button
+                                                onClick={() => {
+                                                    setMenuState(false)
+                                                    setTimeout(() => {
+                                                        document.getElementById(item.target)?.scrollIntoView({ behavior: 'smooth' })
+                                                    }, 150)
+                                                }}
+                                                className="text-zinc-400 text-sm py-2.5 px-2 rounded-lg hover:text-white hover:bg-white/[0.04] transition-colors duration-200 block w-full text-left cursor-pointer">
+                                                {item.name}
+                                            </button>
                                         </motion.div>
                                     ))}
                                     <motion.div

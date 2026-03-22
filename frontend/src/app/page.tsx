@@ -190,7 +190,7 @@ export default function Home() {
       </section>
 
       {/* ─── Section 2: Stats Marquee ─── */}
-      <section className="relative border-y border-zinc-800/50 bg-zinc-950/50 py-5">
+      <section id="stats" className="relative border-y border-zinc-800/50 bg-zinc-950/50 py-5">
         <Marquee duration={35} pauseOnHover fade fadeAmount={8}>
           <StatItem icon={<Zap className="h-4 w-4 text-red-500" />} label="10K+ links shortened" />
           <StatDivider />
