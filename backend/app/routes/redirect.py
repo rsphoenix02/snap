@@ -1,0 +1,103 @@
+import json
+from datetime import datetime, timezone
+
+import httpx
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from user_agents import parse as parse_ua
+
+from app.cache import redis_client
+from app.database import get_db
+from app.middleware.rate_limiter import rate_limit_redirect
+from app.models import Link
+from app.schemas import ApiResponse
+
+router = APIRouter(tags=["redirect"])
+
+
+async def _log_click(
+    request: Request,
+    link_id: int,
+) -> None:
+    """Log click data to Redis buffer (runs as background task)."""
+    ua_string = request.headers.get("user-agent", "")
+    ua = parse_ua(ua_string)
+    device_type = "mobile" if ua.is_mobile else "tablet" if ua.is_tablet else "desktop"
+    browser = ua.browser.family
+
+    ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+    if "," in ip:
+        ip = ip.split(",")[0].strip()
+
+    referrer = request.headers.get("referer")
+
+    # GeoIP lookup (best-effort)
+    country = None
+    city = None
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            geo_resp = await client.get(f"http://ip-api.com/json/{ip}?fields=country,city")
+            if geo_resp.status_code == 200:
+                geo = geo_resp.json()
+                country = geo.get("country")
+                city = geo.get("city")
+    except Exception:
+        pass
+
+    click_data = {
+        "ip_address": ip,
+        "user_agent": ua_string,
+        "referrer": referrer,
+        "country": country,
+        "city": city,
+        "device_type": device_type,
+        "browser": browser,
+    }
+
+    click_buffer = request.app.state.click_buffer
+    await click_buffer.push_click(link_id, click_data)
+    await click_buffer.register_link_id(link_id)
+
+
+@router.get("/{short_code}", dependencies=[Depends(rate_limit_redirect)])
+async def redirect_short_url(
+    short_code: str,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    # Skip if this looks like an API route
+    if short_code.startswith("api"):
+        raise HTTPException(status_code=404, detail="Not found")
+
+    # Check Redis cache first (stores "link_id|original_url")
+    cached = await redis_client.get(f"url:{short_code}")
+    if cached and "|" in cached:
+        link_id_str, original_url = cached.split("|", 1)
+        background_tasks.add_task(_log_click, request, int(link_id_str))
+        return RedirectResponse(url=original_url, status_code=302)
+
+    # Cache miss — lookup in PostgreSQL
+    result = await db.execute(
+        select(Link).where(Link.short_code == short_code)
+    )
+    link = result.scalar_one_or_none()
+
+    if not link:
+        raise HTTPException(status_code=404, detail="Short URL not found")
+
+    if not link.is_active:
+        raise HTTPException(status_code=410, detail="This link has been deactivated")
+
+    if link.expires_at and link.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=410, detail="This link has expired")
+
+    # Cache in Redis (1 hour TTL) — format: "link_id|original_url"
+    await redis_client.set(f"url:{short_code}", f"{link.id}|{link.original_url}", ex=3600)
+
+    # Log click async
+    background_tasks.add_task(_log_click, request, link.id)
+
+    return RedirectResponse(url=link.original_url, status_code=302)
