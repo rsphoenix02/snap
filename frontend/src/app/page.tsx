@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { useAuth } from "@/context/auth-context";
+import { apiFetch } from "@/lib/api";
 import { Header } from "@/components/ui/navbar";
 import { Globe } from "@/components/ui/globe";
 import { Marquee } from "@/components/ui/marquee";
@@ -52,6 +54,7 @@ export default function Home() {
   const [shortUrl, setShortUrl] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const { user, accessToken } = useAuth();
 
   // GSAP page-load entrance
   useGSAP(() => {
@@ -69,26 +72,32 @@ export default function Home() {
 
   const handleShorten = useCallback(async () => {
     setError("");
+    if (!user || !accessToken) {
+      setError("Sign up to shorten & track your links");
+      return;
+    }
     if (!isValidUrl(url)) {
       setError("Please enter a valid URL starting with http:// or https://");
       return;
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/shorten", {
+      const res = await apiFetch<{ short_url: string; short_code: string }>("/api/links", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
+        token: accessToken,
       });
-      if (!res.ok) throw new Error("API error");
-      const data = await res.json();
-      setShortUrl(data.short_url);
+      if (res.error) {
+        setError(res.error);
+      } else if (res.data?.short_url) {
+        setShortUrl(res.data.short_url);
+      }
     } catch {
-      setError("API coming soon \u2014 check back after deploy");
+      setError("Something went wrong — please try again");
     } finally {
       setLoading(false);
     }
-  }, [url]);
+  }, [url, user, accessToken]);
 
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(shortUrl);
