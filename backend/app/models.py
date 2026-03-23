@@ -74,7 +74,6 @@ class Click(Base):
     clicked_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
-    ip_address: Mapped[str] = mapped_column(String(45), nullable=False)
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
     referrer: Mapped[str | None] = mapped_column(Text, nullable=True)
     country: Mapped[str | None] = mapped_column(String(100), nullable=True)

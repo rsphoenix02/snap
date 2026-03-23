@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS clicks (
     id SERIAL PRIMARY KEY,
     link_id INTEGER NOT NULL REFERENCES links(id) ON DELETE CASCADE,
     clicked_at TIMESTAMPTZ DEFAULT now(),
-    ip_address VARCHAR(45) NOT NULL,
     user_agent TEXT,
     referrer TEXT,
     country VARCHAR(100),

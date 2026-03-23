@@ -30,13 +30,15 @@ async def _log_click(
     if "," in ip:
         ip = ip.split(",")[0].strip()
 
-    referrer = request.headers.get("referer")
+    referrer = request.headers.get("referer") or None
 
     # GeoIP lookup (best-effort) — uses shared client from app.state
     country = None
     city = None
     try:
         http_client = request.app.state.http_client
+        # ip-api.com free tier requires HTTP; HTTPS needs Pro plan.
+        # IP is resolved to country/city here then discarded — never stored.
         geo_resp = await http_client.get(f"http://ip-api.com/json/{ip}?fields=country,city")
         if geo_resp.status_code == 200:
             geo = geo_resp.json()
@@ -46,7 +48,6 @@ async def _log_click(
         pass
 
     click_data = {
-        "ip_address": ip,
         "user_agent": ua_string,
         "referrer": referrer,
         "country": country,

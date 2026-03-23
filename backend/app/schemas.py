@@ -101,7 +101,6 @@ class UpdateLinkRequest(BaseModel):
 
 class StatsResponse(BaseModel):
     total_clicks: int
-    unique_visitors: int
     top_country: str | None
     clicks_today: int
     clicks_this_week: int

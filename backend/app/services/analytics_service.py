@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import distinct, func, select, case, text
+from sqlalchemy import func, select, case, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Click
@@ -14,7 +14,6 @@ async def get_stats(db: AsyncSession, link_id: int) -> dict:
     result = await db.execute(
         select(
             func.count(Click.id).label("total_clicks"),
-            func.count(distinct(Click.ip_address)).label("unique_visitors"),
             func.count(case((Click.clicked_at >= today_start, 1))).label("clicks_today"),
             func.count(case((Click.clicked_at >= week_start, 1))).label("clicks_this_week"),
         ).where(Click.link_id == link_id)
@@ -33,7 +32,6 @@ async def get_stats(db: AsyncSession, link_id: int) -> dict:
 
     return {
         "total_clicks": row.total_clicks,
-        "unique_visitors": row.unique_visitors,
         "top_country": top_country_row.country if top_country_row else None,
         "clicks_today": row.clicks_today,
         "clicks_this_week": row.clicks_this_week,

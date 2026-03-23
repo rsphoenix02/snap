@@ -62,7 +62,6 @@ class ClickBuffer:
                         clicks_to_insert.append(
                             Click(
                                 link_id=data["link_id"],
-                                ip_address=data.get("ip_address", "unknown"),
                                 user_agent=data.get("user_agent"),
                                 referrer=data.get("referrer"),
                                 country=data.get("country"),
