@@ -4,6 +4,7 @@ import { Equal, X, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/liquid-glass-button'
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '@/context/auth-context'
 
 const menuItems = [
     { name: 'Features', target: 'features' },
@@ -15,6 +16,7 @@ export const Header = () => {
     const [menuState, setMenuState] = React.useState(false)
     const [isScrolled, setIsScrolled] = React.useState(false)
     const [mounted, setMounted] = React.useState(false)
+    const { user, logout } = useAuth()
 
     React.useEffect(() => {
         setMounted(true)
@@ -120,17 +122,31 @@ export const Header = () => {
                     </button>
 
                     {/* CTA — pushed to far right */}
-                    <div className="lg:ml-auto hidden lg:flex items-center gap-2">
-                        <Button asChild variant="outline" size="sm">
-                            <Link href="#">
-                                <span>Login</span>
-                            </Link>
-                        </Button>
-                        <Button asChild size="sm">
-                            <Link href="#">
-                                <span>Sign Up</span>
-                            </Link>
-                        </Button>
+                    <div className="lg:ml-auto hidden lg:flex items-center gap-3">
+                        {user ? (
+                            <>
+                                <Link href="/dashboard" className="text-sm text-zinc-400 hover:text-white transition-colors">
+                                    Dashboard
+                                </Link>
+                                <span className="text-sm text-zinc-500">{user.name}</span>
+                                <Button variant="outline" size="sm" onClick={logout}>
+                                    <span>Logout</span>
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button asChild variant="outline" size="sm">
+                                    <Link href="/login">
+                                        <span>Login</span>
+                                    </Link>
+                                </Button>
+                                <Button asChild size="sm">
+                                    <Link href="/signup">
+                                        <span>Sign Up</span>
+                                    </Link>
+                                </Button>
+                            </>
+                        )}
                     </div>
 
                     {/* Mobile dropdown menu */}
@@ -168,16 +184,31 @@ export const Header = () => {
                                         exit={{ opacity: 0, x: -12 }}
                                         transition={{ delay: menuItems.length * 0.05, type: 'spring', stiffness: 200, damping: 20 }}
                                         className="flex flex-col gap-2 pt-2">
-                                        <Button asChild variant="outline" size="sm">
-                                            <Link href="#">
-                                                <span>Login</span>
-                                            </Link>
-                                        </Button>
-                                        <Button asChild size="sm">
-                                            <Link href="#">
-                                                <span>Sign Up</span>
-                                            </Link>
-                                        </Button>
+                                        {user ? (
+                                            <>
+                                                <Button asChild variant="outline" size="sm">
+                                                    <Link href="/dashboard">
+                                                        <span>Dashboard</span>
+                                                    </Link>
+                                                </Button>
+                                                <Button size="sm" onClick={() => { setMenuState(false); logout(); }}>
+                                                    <span>Logout</span>
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Button asChild variant="outline" size="sm">
+                                                    <Link href="/login">
+                                                        <span>Login</span>
+                                                    </Link>
+                                                </Button>
+                                                <Button asChild size="sm">
+                                                    <Link href="/signup">
+                                                        <span>Sign Up</span>
+                                                    </Link>
+                                                </Button>
+                                            </>
+                                        )}
                                     </motion.div>
                                 </div>
                             </motion.div>
