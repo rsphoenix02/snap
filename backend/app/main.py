@@ -2,6 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -18,6 +19,7 @@ from app.services.click_buffer import ClickBuffer
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    app.state.http_client = httpx.AsyncClient(timeout=3.0)
     click_buffer = ClickBuffer(redis=redis_client, db_session_factory=async_session)
     app.state.click_buffer = click_buffer
     flush_task = asyncio.create_task(click_buffer.start_flush_loop(interval=30))
@@ -25,6 +27,7 @@ async def lifespan(app: FastAPI):
     # Shutdown
     await click_buffer.shutdown_flush()
     flush_task.cancel()
+    await app.state.http_client.aclose()
     await redis_client.close()
 
 

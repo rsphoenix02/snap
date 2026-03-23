@@ -1,7 +1,6 @@
 import json
 from datetime import datetime, timezone
 
-import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
@@ -33,16 +32,16 @@ async def _log_click(
 
     referrer = request.headers.get("referer")
 
-    # GeoIP lookup (best-effort)
+    # GeoIP lookup (best-effort) — uses shared client from app.state
     country = None
     city = None
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            geo_resp = await client.get(f"http://ip-api.com/json/{ip}?fields=country,city")
-            if geo_resp.status_code == 200:
-                geo = geo_resp.json()
-                country = geo.get("country")
-                city = geo.get("city")
+        http_client = request.app.state.http_client
+        geo_resp = await http_client.get(f"http://ip-api.com/json/{ip}?fields=country,city")
+        if geo_resp.status_code == 200:
+            geo = geo_resp.json()
+            country = geo.get("country")
+            city = geo.get("city")
     except Exception:
         pass
 
