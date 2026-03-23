@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, Request, Cookie
+from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -124,6 +124,12 @@ async def refresh(
 
     new_access = create_access_token(user.id)
     return ApiResponse(data={"access_token": new_access})
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie("refresh_token", path="/api/auth")
+    return ApiResponse(data={"message": "Logged out"})
 
 
 @router.get("/me")

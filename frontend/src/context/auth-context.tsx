@@ -90,8 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     setState({ user: null, accessToken: null, isLoading: false });
-    // Clear refresh cookie by calling a dummy refresh (it will fail and clear)
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/auth/refresh`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/auth/logout`, {
       method: "POST",
       credentials: "include",
     }).catch(() => {});

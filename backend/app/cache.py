@@ -83,6 +83,18 @@ class RedisClient:
     async def ltrim(self, key: str, start: int, stop: int) -> None:
         await self._command("LTRIM", key, start, stop)
 
+    # --- Set (active link tracking) ---
+
+    async def sadd(self, key: str, *members: str) -> None:
+        await self._command("SADD", key, *members)
+
+    async def smembers(self, key: str) -> list[str]:
+        result = await self._command("SMEMBERS", key)
+        return result if result else []
+
+    async def srem(self, key: str, *members: str) -> None:
+        await self._command("SREM", key, *members)
+
     async def close(self) -> None:
         if self._client and not self._client.is_closed:
             await self._client.aclose()

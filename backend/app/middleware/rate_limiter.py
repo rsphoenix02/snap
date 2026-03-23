@@ -2,7 +2,6 @@ import time
 import uuid
 
 from fastapi import Depends, HTTPException, Request
-from starlette.responses import JSONResponse
 
 from app.cache import redis_client
 from app.dependencies import get_optional_user
@@ -23,11 +22,16 @@ async def check_rate_limit(
 ) -> None:
     now = time.time()
     window_start = now - window
+    member = f"{now}:{uuid.uuid4().hex[:8]}"
 
-    await redis_client.zremrangebyscore(key, 0, window_start)
-    await redis_client.zadd(key, now, f"{now}:{uuid.uuid4().hex[:8]}")
-    count = await redis_client.zcard(key)
-    await redis_client.expire(key, window)
+    # Use pipeline for atomicity to prevent race conditions
+    results = await redis_client._post_command([
+        ["ZREMRANGEBYSCORE", key, 0, window_start],
+        ["ZADD", key, now, member],
+        ["ZCARD", key],
+        ["EXPIRE", key, window],
+    ])
+    count = int(results[2]) if results[2] else 0
 
     if count > limit:
         raise HTTPException(
@@ -44,23 +48,29 @@ async def rate_limit_redirect(request: Request) -> None:
     await check_rate_limit(f"rate:{ip}:redirect", RATE_LIMITS["redirect"]["limit"])
 
 
-def rate_limit_write(user: User = Depends(get_optional_user)):
-    async def _check(request: Request):
-        if user:
-            limit = RATE_LIMITS.get(user.tier, RATE_LIMITS["free"])["write"]
-            await check_rate_limit(f"rate:{user.id}:write", limit)
-        else:
-            ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
-            await check_rate_limit(f"rate:{ip}:write", RATE_LIMITS["free"]["write"])
-    return _check
+async def rate_limit_write(
+    request: Request,
+    user: User | None = Depends(get_optional_user),
+) -> None:
+    if user:
+        limit = RATE_LIMITS.get(user.tier, RATE_LIMITS["free"])["write"]
+        await check_rate_limit(f"rate:{user.id}:write", limit)
+    else:
+        ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+        if "," in ip:
+            ip = ip.split(",")[0].strip()
+        await check_rate_limit(f"rate:{ip}:write", RATE_LIMITS["free"]["write"])
 
 
-def rate_limit_read(user: User = Depends(get_optional_user)):
-    async def _check(request: Request):
-        if user:
-            limit = RATE_LIMITS.get(user.tier, RATE_LIMITS["free"])["read"]
-            await check_rate_limit(f"rate:{user.id}:read", limit)
-        else:
-            ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
-            await check_rate_limit(f"rate:{ip}:read", RATE_LIMITS["free"]["read"])
-    return _check
+async def rate_limit_read(
+    request: Request,
+    user: User | None = Depends(get_optional_user),
+) -> None:
+    if user:
+        limit = RATE_LIMITS.get(user.tier, RATE_LIMITS["free"])["read"]
+        await check_rate_limit(f"rate:{user.id}:read", limit)
+    else:
+        ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+        if "," in ip:
+            ip = ip.split(",")[0].strip()
+        await check_rate_limit(f"rate:{ip}:read", RATE_LIMITS["free"]["read"])

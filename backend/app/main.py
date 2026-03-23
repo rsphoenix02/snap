@@ -1,10 +1,13 @@
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError, HTTPException
+
+logger = logging.getLogger(__name__)
 
 from app.cache import redis_client
 from app.config import settings
@@ -54,6 +57,15 @@ async def validation_exception_handler(request, exc):
     return JSONResponse(
         status_code=422,
         content={"data": None, "error": msg},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request, exc):
+    logger.error("Unhandled exception: %s", exc, exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"data": None, "error": "Internal server error"},
     )
 
 

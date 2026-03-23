@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
     from app.cache import RedisClient
 
-from app.models import Click
+from app.models import Click, Link
 
 logger = logging.getLogger(__name__)
 
@@ -31,23 +31,29 @@ class ClickBuffer:
     async def flush_to_db(self) -> None:
         """Flush all click buffers to PostgreSQL."""
         master_key = "clicks:active_links"
-        active_ids_raw = await self._redis.lrange(master_key, 0, -1)
+        active_ids_raw = await self._redis.smembers(master_key)
 
         if not active_ids_raw:
             return
 
-        # Deduplicate
         active_ids = list(set(int(x) for x in active_ids_raw))
 
         async with self._db_session_factory() as session:
             for link_id in active_ids:
                 key = f"clicks:{link_id}"
-                count = await self._redis.llen(key)
-                if count == 0:
-                    continue
 
-                raw_items = await self._redis.lrange(key, 0, count - 1)
-                await self._redis.ltrim(key, count, -1)
+                # Atomically read all and trim to prevent data loss
+                # Use pipeline: LRANGE(0, -1) then LTRIM to clear
+                results = await self._redis._post_command([
+                    ["LRANGE", key, 0, -1],
+                    ["DEL", key],
+                ])
+                raw_items = results[0] if results[0] else []
+
+                if not raw_items:
+                    # No clicks for this link, remove from active set
+                    await self._redis.srem(master_key, str(link_id))
+                    continue
 
                 clicks_to_insert = []
                 for raw in raw_items:
@@ -70,7 +76,6 @@ class ClickBuffer:
 
                 if clicks_to_insert:
                     session.add_all(clicks_to_insert)
-                    from app.models import Link
                     await session.execute(
                         update(Link)
                         .where(Link.id == link_id)
@@ -78,11 +83,6 @@ class ClickBuffer:
                     )
 
             await session.commit()
-
-        # Clean up master list (trim processed IDs)
-        current_len = await self._redis.llen(master_key)
-        if current_len > 0:
-            await self._redis.ltrim(master_key, current_len, -1)
 
     async def start_flush_loop(self, interval: int = 30) -> None:
         self._running = True
@@ -103,5 +103,5 @@ class ClickBuffer:
             logger.error("Final flush failed: %s", e)
 
     async def register_link_id(self, link_id: int) -> None:
-        """Register a link_id in the master list so flush knows to check it."""
-        await self._redis.lpush("clicks:active_links", str(link_id))
+        """Register a link_id in the active set (auto-deduplicates)."""
+        await self._redis.sadd("clicks:active_links", str(link_id))
