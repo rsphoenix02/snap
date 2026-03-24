@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError, HTTPException
 
@@ -86,3 +87,26 @@ app.include_router(analytics.router)
 app.include_router(keys.router)
 app.include_router(dashboard.router)
 app.include_router(redirect.router)  # Must be LAST (catch-all /{short_code})
+
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        routes=app.routes,
+    )
+    schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT or API Key (sk_live_...)",
+        }
+    }
+    schema["security"] = [{"BearerAuth": []}]
+    app.openapi_schema = schema
+    return schema
+
+
+app.openapi = custom_openapi
