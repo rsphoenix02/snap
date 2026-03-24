@@ -11,7 +11,7 @@ const tabs = [
   {
     name: "cURL",
     lang: "bash",
-    code: `curl -X POST https://snapurl.click/api/v1/shorten \\
+    code: `curl -X POST https://snapurl.click/api/links \\
   -H "Authorization: Bearer sk_live_..." \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -25,7 +25,7 @@ const tabs = [
     code: `import requests
 
 response = requests.post(
-    "https://snapurl.click/api/v1/shorten",
+    "https://snapurl.click/api/links",
     headers={
         "Authorization": "Bearer sk_live_...",
         "Content-Type": "application/json",
@@ -41,7 +41,7 @@ print(response.json())`,
     name: "JavaScript",
     lang: "javascript",
     code: `const response = await fetch(
-  "https://snapurl.click/api/v1/shorten",
+  "https://snapurl.click/api/links",
   {
     method: "POST",
     headers: {
@@ -62,12 +62,53 @@ const data = await response.json();`,
 const maxCodeLines = Math.max(...tabs.map((t) => t.code.split("\n").length));
 
 const responseJson = `{
-  "short_url": "https://snapurl.click/my-link",
-  "original_url": "https://example.com/very-long-path",
-  "custom_code": "my-link",
-  "created_at": "2026-03-22T10:30:00Z",
-  "clicks": 0
+  "data": {
+    "id": 42,
+    "short_code": "my-link",
+    "original_url": "https://example.com/very-long-path",
+    "short_url": "https://snapurl.click/my-link",
+    "title": null,
+    "created_at": "2026-03-22T10:30:00Z",
+    "expires_at": null,
+    "click_count": 0,
+    "is_active": true
+  },
+  "error": null
 }`;
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1 rounded-md border border-zinc-700 bg-zinc-800/80 px-2 py-1 text-[11px] text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
+      title="Copy to clipboard"
+    >
+      {copied ? (
+        <>
+          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          Copied
+        </>
+      ) : (
+        <>
+          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          Copy
+        </>
+      )}
+    </button>
+  );
+}
 
 function WindowDots() {
   return (
@@ -317,9 +358,12 @@ export function ApiShowcase() {
               >
                 {tabs[activeTab].lang}
               </span>
-              <span className="inline-flex items-center rounded-md bg-red-500/15 px-2 py-0.5 text-[11px] font-bold tracking-wider text-red-400 ring-1 ring-red-500/30">
-                POST
-              </span>
+              <div className="flex items-center gap-2">
+                <CopyButton text={displayCode} />
+                <span className="inline-flex items-center rounded-md bg-red-500/15 px-2 py-0.5 text-[11px] font-bold tracking-wider text-red-400 ring-1 ring-red-500/30">
+                  POST
+                </span>
+              </div>
             </div>
 
             {/* Tabs row */}
@@ -382,10 +426,13 @@ export function ApiShowcase() {
               >
                 response.json
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold tracking-wider text-emerald-400 ring-1 ring-emerald-500/30">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                200 OK
-              </span>
+              <div className="flex items-center gap-2">
+                <CopyButton text={responseJson} />
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold tracking-wider text-emerald-400 ring-1 ring-emerald-500/30">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  200 OK
+                </span>
+              </div>
             </div>
 
             {/* JSON content with line numbers */}
