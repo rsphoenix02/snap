@@ -28,6 +28,7 @@ export interface AnalyticsCacheEntry {
 
 interface Props {
   code: string;
+  active: boolean;
   onUpdate: () => void;
   cached?: AnalyticsCacheEntry;
   onDataLoaded?: (code: string, entry: AnalyticsCacheEntry) => void;
@@ -55,7 +56,7 @@ interface BrowserItem {
 
 const RANGES = ["24h", "7d", "30d", "all"] as const;
 
-export function LinkDetail({ code, onUpdate, cached, onDataLoaded }: Props) {
+export function LinkDetail({ code, active, onUpdate, cached, onDataLoaded }: Props) {
   const { accessToken } = useAuth();
   const [range, setRange] = useState<string>(cached?.range ?? "7d");
   const [points, setPoints] = useState<TimePoint[]>(cached?.data.points ?? []);
@@ -65,6 +66,7 @@ export function LinkDetail({ code, onUpdate, cached, onDataLoaded }: Props) {
   const [loading, setLoading] = useState(!cached);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
+  const [editUrl, setEditUrl] = useState("");
   const [editExpiry, setEditExpiry] = useState("");
 
   const fetchData = useCallback(async () => {
@@ -222,52 +224,66 @@ export function LinkDetail({ code, onUpdate, cached, onDataLoaded }: Props) {
         </div>
       </div>
 
-      {/* Edit + Deactivate */}
+      {/* Edit + Deactivate/Reactivate */}
       <div className="flex justify-between items-start">
         {editing ? (
-          <div className="flex items-end gap-3">
-            <div>
-              <label className="block text-xs text-zinc-500 mb-1">Title</label>
-              <input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Link title"
-                className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-500/50"
-              />
+          <div className="space-y-3">
+            <div className="flex items-end gap-3 flex-wrap">
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">Destination URL</label>
+                <input
+                  value={editUrl}
+                  onChange={(e) => setEditUrl(e.target.value)}
+                  placeholder="https://example.com/new-url"
+                  className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 w-72"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">Title</label>
+                <input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  placeholder="Link title"
+                  className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">Expiry</label>
+                <input
+                  type="datetime-local"
+                  value={editExpiry}
+                  onChange={(e) => setEditExpiry(e.target.value)}
+                  className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-xs text-zinc-500 mb-1">Expiry (ISO date)</label>
-              <input
-                type="datetime-local"
-                value={editExpiry}
-                onChange={(e) => setEditExpiry(e.target.value)}
-                className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-500/50"
-              />
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  if (!accessToken) return;
+                  const body: Record<string, unknown> = {};
+                  if (editUrl.trim()) body.original_url = editUrl.trim();
+                  if (editTitle.trim()) body.title = editTitle.trim();
+                  if (editExpiry) body.expires_at = new Date(editExpiry).toISOString();
+                  await apiFetch(`/api/links/${code}`, {
+                    method: "PATCH",
+                    body: JSON.stringify(body),
+                    token: accessToken,
+                  });
+                  setEditing(false);
+                  onUpdate();
+                }}
+                className="rounded-lg bg-red-500 px-3 py-2 text-sm text-white hover:bg-red-600 transition-colors"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
             </div>
-            <button
-              onClick={async () => {
-                if (!accessToken) return;
-                const body: Record<string, string> = {};
-                if (editTitle.trim()) body.title = editTitle.trim();
-                if (editExpiry) body.expires_at = new Date(editExpiry).toISOString();
-                await apiFetch(`/api/links/${code}`, {
-                  method: "PATCH",
-                  body: JSON.stringify(body),
-                  token: accessToken,
-                });
-                setEditing(false);
-                onUpdate();
-              }}
-              className="rounded-lg bg-red-500 px-3 py-2 text-sm text-white hover:bg-red-600 transition-colors"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setEditing(false)}
-              className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
           </div>
         ) : (
           <button
@@ -277,13 +293,30 @@ export function LinkDetail({ code, onUpdate, cached, onDataLoaded }: Props) {
             Edit
           </button>
         )}
-        <button
-          onClick={handleDeactivate}
-          className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400 hover:bg-red-500/20 transition-colors"
-        >
-          <Trash2 className="size-3.5" />
-          Deactivate Link
-        </button>
+        {active ? (
+          <button
+            onClick={handleDeactivate}
+            className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400 hover:bg-red-500/20 transition-colors"
+          >
+            <Trash2 className="size-3.5" />
+            Deactivate
+          </button>
+        ) : (
+          <button
+            onClick={async () => {
+              if (!accessToken) return;
+              await apiFetch(`/api/links/${code}`, {
+                method: "PATCH",
+                body: JSON.stringify({ is_active: true }),
+                token: accessToken,
+              });
+              onUpdate();
+            }}
+            className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+          >
+            Reactivate
+          </button>
+        )}
       </div>
     </div>
   );

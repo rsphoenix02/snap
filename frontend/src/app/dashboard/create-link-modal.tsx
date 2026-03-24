@@ -64,7 +64,7 @@ export function CreateLinkModal({ onClose, onCreated }: Props) {
       <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-white">Create Short Link</h2>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
+          <button onClick={result ? onCreated : onClose} className="text-zinc-500 hover:text-white transition-colors">
             <X className="size-5" />
           </button>
         </div>

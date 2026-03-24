@@ -112,6 +112,7 @@ export function LinksTable({ refreshKey }: Props) {
                   <td colSpan={5} className="px-4 py-4 bg-zinc-900/80">
                     <LinkDetail
                       code={link.short_code}
+                      active={link.is_active}
                       onUpdate={fetchLinks}
                       cached={analyticsCache.current[link.short_code]}
                       onDataLoaded={handleDataLoaded}

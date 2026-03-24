@@ -103,8 +103,16 @@ class PaginatedLinksResponse(BaseModel):
 
 class UpdateLinkRequest(BaseModel):
     title: str | None = None
+    original_url: str | None = None
     expires_at: datetime | None = None
     is_active: bool | None = None
+
+    @field_validator("original_url")
+    @classmethod
+    def validate_url(cls, v: str | None) -> str | None:
+        if v is not None and not v.startswith(("http://", "https://")):
+            raise ValueError("URL must start with http:// or https://")
+        return v
 
 
 # --- Analytics ---
