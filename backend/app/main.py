@@ -72,6 +72,11 @@ async def unhandled_exception_handler(request, exc):
     )
 
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 # Register routers
 from app.routes import auth, links, analytics, keys, dashboard, redirect  # noqa: E402
 
@@ -81,8 +86,3 @@ app.include_router(analytics.router)
 app.include_router(keys.router)
 app.include_router(dashboard.router)
 app.include_router(redirect.router)  # Must be LAST (catch-all /{short_code})
-
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
