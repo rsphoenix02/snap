@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { apiFetch } from "@/lib/api";
 import { LinkDetail, type AnalyticsCacheEntry } from "./link-detail";
@@ -27,7 +27,16 @@ export function LinksTable({ refreshKey }: Props) {
   const [page, setPage] = useState(1);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const analyticsCache = useRef<Record<string, AnalyticsCacheEntry>>({});
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const limit = 20;
+
+  const handleCopy = async (e: React.MouseEvent, shortUrl: string | undefined, code: string) => {
+    e.stopPropagation();
+    if (!shortUrl) return;
+    await navigator.clipboard.writeText(shortUrl);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
 
   const handleDataLoaded = useCallback((code: string, entry: AnalyticsCacheEntry) => {
     analyticsCache.current = { ...analyticsCache.current, [code]: entry };
@@ -82,9 +91,22 @@ export function LinksTable({ refreshKey }: Props) {
                 className="border-b border-zinc-800/50 hover:bg-zinc-800/30 cursor-pointer transition-colors"
               >
                 <td className="px-4 py-3">
-                  <span className="text-sm text-red-400" style={{ fontFamily: "var(--font-geist-mono)" }}>
-                    {link.short_code}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-red-400" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                      {link.short_code}
+                    </span>
+                    <button
+                      onClick={(e) => handleCopy(e, link.short_url, link.short_code)}
+                      className="text-zinc-600 hover:text-zinc-300 transition-colors"
+                      title="Copy short URL"
+                    >
+                      {copiedCode === link.short_code ? (
+                        <Check className="size-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="size-3.5" />
+                      )}
+                    </button>
+                  </div>
                 </td>
                 <td className="px-4 py-3 hidden md:table-cell">
                   <span className="text-sm text-zinc-400 truncate block max-w-xs">
