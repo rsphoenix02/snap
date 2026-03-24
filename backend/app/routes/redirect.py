@@ -15,6 +15,8 @@ from app.schemas import ApiResponse
 
 router = APIRouter(tags=["redirect"])
 
+RESERVED_CODES = {"api", "health", "docs", "openapi.json"}
+
 
 async def _log_click(
     request: Request,
@@ -69,15 +71,26 @@ async def redirect_short_url(
     db: AsyncSession = Depends(get_db),
 ):
     # Skip if this looks like an API route
-    if short_code.startswith("api"):
+    if short_code in RESERVED_CODES:
         raise HTTPException(status_code=404, detail="Not found")
 
-    # Check Redis cache first (stores "link_id|original_url")
+    # Check Redis cache first
     cached = await redis_client.get(f"url:{short_code}")
-    if cached and "|" in cached:
-        link_id_str, original_url = cached.split("|", 1)
-        background_tasks.add_task(_log_click, request, int(link_id_str))
-        return RedirectResponse(url=original_url, status_code=302)
+    if cached:
+        try:
+            data = json.loads(cached)
+        except (json.JSONDecodeError, TypeError):
+            data = None
+
+        if data:
+            if not data["active"]:
+                await redis_client.delete(f"url:{short_code}")
+                raise HTTPException(status_code=410, detail="This link has been deactivated")
+            if data["expires"] and datetime.fromisoformat(data["expires"]) < datetime.now(timezone.utc):
+                await redis_client.delete(f"url:{short_code}")
+                raise HTTPException(status_code=410, detail="This link has expired")
+            background_tasks.add_task(_log_click, request, data["id"])
+            return RedirectResponse(url=data["url"], status_code=302)
 
     # Cache miss — lookup in PostgreSQL
     result = await db.execute(
@@ -94,8 +107,14 @@ async def redirect_short_url(
     if link.expires_at and link.expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=410, detail="This link has expired")
 
-    # Cache in Redis (1 hour TTL) — format: "link_id|original_url"
-    await redis_client.set(f"url:{short_code}", f"{link.id}|{link.original_url}", ex=3600)
+    # Cache in Redis (1 hour TTL) — JSON with validation fields
+    cache_val = json.dumps({
+        "id": link.id,
+        "url": link.original_url,
+        "active": link.is_active,
+        "expires": link.expires_at.isoformat() if link.expires_at else None,
+    })
+    await redis_client.set(f"url:{short_code}", cache_val, ex=3600)
 
     # Log click async
     background_tasks.add_task(_log_click, request, link.id)

@@ -1,6 +1,9 @@
 import re
+from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
+
+from app.password_check import is_common_password
 
 
 # --- Envelope ---
@@ -14,7 +17,7 @@ class ApiResponse(BaseModel):
 
 class RegisterRequest(BaseModel):
     email: str
-    password: str = Field(min_length=8)
+    password: str = Field(min_length=12)
     name: str = Field(min_length=1, max_length=100)
 
     @field_validator("email")
@@ -24,6 +27,13 @@ class RegisterRequest(BaseModel):
         if not re.match(pattern, v):
             raise ValueError("Invalid email format")
         return v.lower()
+
+    @field_validator("password")
+    @classmethod
+    def password_not_common(cls, v: str) -> str:
+        if is_common_password(v):
+            raise ValueError("This password is too common. Please choose a more unique password.")
+        return v
 
 
 class LoginRequest(BaseModel):
@@ -93,7 +103,7 @@ class PaginatedLinksResponse(BaseModel):
 
 class UpdateLinkRequest(BaseModel):
     title: str | None = None
-    expires_at: str | None = None
+    expires_at: datetime | None = None
     is_active: bool | None = None
 
 

@@ -72,7 +72,10 @@ async def get_clicks_timeseries(db: AsyncSession, link_id: int, range_str: str) 
 async def get_referrers(db: AsyncSession, link_id: int) -> list[dict]:
     domain_expr = func.coalesce(
         func.regexp_replace(
-            func.regexp_replace(Click.referrer, r"^https?://", ""),
+            func.regexp_replace(
+                func.nullif(Click.referrer, ""),
+                r"^https?://", ""
+            ),
             r"/.*$", ""
         ),
         "Direct"

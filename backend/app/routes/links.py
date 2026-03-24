@@ -148,6 +148,8 @@ async def update_link(
         )
         await db.commit()
         await db.refresh(link)
+        # Invalidate cached redirect so new values take effect immediately
+        await redis_client.delete(f"url:{link.short_code}")
 
     return ApiResponse(data=_link_to_response(link))
 

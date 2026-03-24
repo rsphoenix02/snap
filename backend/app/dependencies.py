@@ -6,6 +6,7 @@ from fastapi import Cookie, Depends, HTTPException, Request
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.models import ApiKey, User
 from app.services.auth_service import verify_token
@@ -26,7 +27,7 @@ async def get_current_user(
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    user_id = verify_token(token, expected_type="access")
+    user_id = verify_token(token, expected_type="access", secret=settings.JWT_SECRET)
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
@@ -44,7 +45,7 @@ async def get_optional_user(
     token = _extract_bearer_token(request)
     if not token:
         return None
-    user_id = verify_token(token, expected_type="access")
+    user_id = verify_token(token, expected_type="access", secret=settings.JWT_SECRET)
     if not user_id:
         return None
     result = await db.execute(select(User).where(User.id == UUID(user_id)))
@@ -60,7 +61,7 @@ async def get_current_user_or_api_key(
         raise HTTPException(status_code=401, detail="Not authenticated")
 
     # Try JWT first
-    user_id = verify_token(token, expected_type="access")
+    user_id = verify_token(token, expected_type="access", secret=settings.JWT_SECRET)
     if user_id:
         result = await db.execute(select(User).where(User.id == UUID(user_id)))
         user = result.scalar_one_or_none()
