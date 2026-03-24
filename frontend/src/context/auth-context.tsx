@@ -41,19 +41,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Silent refresh on mount
   useEffect(() => {
     const tryRefresh = async () => {
-      const res = await apiFetch<{ access_token: string }>("/api/auth/refresh", {
-        method: "POST",
-      });
-      if (res.data?.access_token) {
-        const meRes = await apiFetch<User>("/api/auth/me", {
-          token: res.data.access_token,
+      try {
+        const res = await apiFetch<{ access_token: string }>("/api/auth/refresh", {
+          method: "POST",
         });
-        setState({
-          user: meRes.data ?? null,
-          accessToken: res.data.access_token,
-          isLoading: false,
-        });
-      } else {
+        if (res.data?.access_token) {
+          const meRes = await apiFetch<User>("/api/auth/me", {
+            token: res.data.access_token,
+          });
+          setState({
+            user: meRes.data ?? null,
+            accessToken: res.data.access_token,
+            isLoading: false,
+          });
+        } else {
+          setState({ user: null, accessToken: null, isLoading: false });
+        }
+      } catch {
         setState({ user: null, accessToken: null, isLoading: false });
       }
     };

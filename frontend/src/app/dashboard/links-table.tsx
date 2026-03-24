@@ -1,10 +1,10 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { apiFetch } from "@/lib/api";
-import { LinkDetail } from "./link-detail";
+import { LinkDetail, type AnalyticsCacheEntry } from "./link-detail";
 
 interface LinkItem {
   id: number;
@@ -26,7 +26,12 @@ export function LinksTable({ refreshKey }: Props) {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
+  const analyticsCache = useRef<Record<string, AnalyticsCacheEntry>>({});
   const limit = 20;
+
+  const handleDataLoaded = useCallback((code: string, entry: AnalyticsCacheEntry) => {
+    analyticsCache.current = { ...analyticsCache.current, [code]: entry };
+  }, []);
 
   const fetchLinks = useCallback(async () => {
     if (!accessToken) return;
@@ -105,7 +110,12 @@ export function LinksTable({ refreshKey }: Props) {
               {expandedCode === link.short_code && (
                 <tr>
                   <td colSpan={5} className="px-4 py-4 bg-zinc-900/80">
-                    <LinkDetail code={link.short_code} onUpdate={fetchLinks} />
+                    <LinkDetail
+                      code={link.short_code}
+                      onUpdate={fetchLinks}
+                      cached={analyticsCache.current[link.short_code]}
+                      onDataLoaded={handleDataLoaded}
+                    />
                   </td>
                 </tr>
               )}

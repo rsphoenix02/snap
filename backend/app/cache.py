@@ -25,8 +25,7 @@ class RedisClient:
 
     async def _command(self, *args: str | int | float) -> Any:
         client = await self._get_client()
-        path = "/" + "/".join(str(a) for a in args)
-        resp = await client.get(path)
+        resp = await client.post("/", json=list(str(a) for a in args))
         resp.raise_for_status()
         data = resp.json()
         return data.get("result")

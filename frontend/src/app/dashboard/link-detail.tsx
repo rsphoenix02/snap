@@ -14,9 +14,23 @@ import {
 import { useAuth } from "@/context/auth-context";
 import { apiFetch } from "@/lib/api";
 
+export interface AnalyticsData {
+  points: TimePoint[];
+  referrers: ReferrerItem[];
+  devices: DeviceItem[];
+  browsers: BrowserItem[];
+}
+
+export interface AnalyticsCacheEntry {
+  range: string;
+  data: AnalyticsData;
+}
+
 interface Props {
   code: string;
   onUpdate: () => void;
+  cached?: AnalyticsCacheEntry;
+  onDataLoaded?: (code: string, entry: AnalyticsCacheEntry) => void;
 }
 
 interface TimePoint {
@@ -41,14 +55,14 @@ interface BrowserItem {
 
 const RANGES = ["24h", "7d", "30d", "all"] as const;
 
-export function LinkDetail({ code, onUpdate }: Props) {
+export function LinkDetail({ code, onUpdate, cached, onDataLoaded }: Props) {
   const { accessToken } = useAuth();
-  const [range, setRange] = useState<string>("7d");
-  const [points, setPoints] = useState<TimePoint[]>([]);
-  const [referrers, setReferrers] = useState<ReferrerItem[]>([]);
-  const [devices, setDevices] = useState<DeviceItem[]>([]);
-  const [browsers, setBrowsers] = useState<BrowserItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState<string>(cached?.range ?? "7d");
+  const [points, setPoints] = useState<TimePoint[]>(cached?.data.points ?? []);
+  const [referrers, setReferrers] = useState<ReferrerItem[]>(cached?.data.referrers ?? []);
+  const [devices, setDevices] = useState<DeviceItem[]>(cached?.data.devices ?? []);
+  const [browsers, setBrowsers] = useState<BrowserItem[]>(cached?.data.browsers ?? []);
+  const [loading, setLoading] = useState(!cached);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editExpiry, setEditExpiry] = useState("");
@@ -63,18 +77,32 @@ export function LinkDetail({ code, onUpdate }: Props) {
       apiFetch<{ devices: DeviceItem[]; browsers: BrowserItem[] }>(`/api/links/${code}/devices`, { token: accessToken }),
     ]);
 
-    if (clicksRes.data) setPoints(clicksRes.data.points);
-    if (refRes.data) setReferrers(refRes.data.referrers);
-    if (devRes.data) {
-      setDevices(devRes.data.devices);
-      setBrowsers(devRes.data.browsers);
-    }
+    const newPoints = clicksRes.data?.points ?? [];
+    const newReferrers = refRes.data?.referrers ?? [];
+    const newDevices = devRes.data?.devices ?? [];
+    const newBrowsers = devRes.data?.browsers ?? [];
+
+    setPoints(newPoints);
+    setReferrers(newReferrers);
+    setDevices(newDevices);
+    setBrowsers(newBrowsers);
     setLoading(false);
-  }, [accessToken, code, range]);
+
+    onDataLoaded?.(code, {
+      range,
+      data: {
+        points: newPoints,
+        referrers: newReferrers,
+        devices: newDevices,
+        browsers: newBrowsers,
+      },
+    });
+  }, [accessToken, code, range, onDataLoaded]);
 
   useEffect(() => {
+    if (cached && range === cached.range) return;
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, cached, range]);
 
   const handleDeactivate = async () => {
     if (!accessToken) return;
