@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Check, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { apiFetch } from "@/lib/api";
 import { LinkDetail, type AnalyticsCacheEntry } from "./link-detail";
@@ -28,6 +28,7 @@ export function LinksTable({ refreshKey }: Props) {
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const analyticsCache = useRef<Record<string, AnalyticsCacheEntry>>({});
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const limit = 20;
 
   const handleCopy = async (e: React.MouseEvent, shortUrl: string | undefined, code: string) => {
@@ -44,6 +45,7 @@ export function LinksTable({ refreshKey }: Props) {
 
   const fetchLinks = useCallback(async () => {
     if (!accessToken) return;
+    setLoading(true);
     const res = await apiFetch<{ links: LinkItem[]; total: number }>("/api/links?page=" + page + "&limit=" + limit, {
       token: accessToken,
     });
@@ -51,6 +53,7 @@ export function LinksTable({ refreshKey }: Props) {
       setLinks(res.data.links);
       setTotal(res.data.total);
     }
+    setLoading(false);
   }, [accessToken, page]);
 
   useEffect(() => {
@@ -62,6 +65,14 @@ export function LinksTable({ refreshKey }: Props) {
   const toggleExpand = (code: string) => {
     setExpandedCode(expandedCode === code ? null : code);
   };
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-8 flex justify-center">
+        <Loader2 className="size-5 animate-spin text-zinc-500" />
+      </div>
+    );
+  }
 
   if (links.length === 0) {
     return (

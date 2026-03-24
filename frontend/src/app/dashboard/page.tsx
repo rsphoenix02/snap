@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Zap, Plus, Link2, MousePointerClick, TrendingUp, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { apiFetch } from "@/lib/api";
@@ -59,10 +60,10 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#0A0A0A]">
       {/* Top bar */}
       <div className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <Zap className="size-5 text-red-500 fill-red-500" />
           <span className="font-semibold text-lg tracking-tighter text-white">SNAP</span>
-        </div>
+        </Link>
         <div className="flex items-center gap-4">
           <span className="text-sm text-zinc-400">{user.name}</span>
           <button
@@ -82,21 +83,31 @@ export default function DashboardPage() {
               <Link2 className="size-4" />
               <span className="text-sm">Total Links</span>
             </div>
-            <p className="text-3xl font-bold text-white">{summary?.total_links ?? 0}</p>
+            {summary ? (
+              <p className="text-3xl font-bold text-white">{summary.total_links}</p>
+            ) : (
+              <div className="h-9 flex items-center"><Loader2 className="size-4 animate-spin text-zinc-600" /></div>
+            )}
           </div>
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
             <div className="flex items-center gap-2 text-zinc-400 mb-2">
               <MousePointerClick className="size-4" />
               <span className="text-sm">Total Clicks</span>
             </div>
-            <p className="text-3xl font-bold text-white">{summary?.total_clicks ?? 0}</p>
+            {summary ? (
+              <p className="text-3xl font-bold text-white">{summary.total_clicks}</p>
+            ) : (
+              <div className="h-9 flex items-center"><Loader2 className="size-4 animate-spin text-zinc-600" /></div>
+            )}
           </div>
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
             <div className="flex items-center gap-2 text-zinc-400 mb-2">
               <TrendingUp className="size-4" />
               <span className="text-sm">Top Performing</span>
             </div>
-            {summary?.top_link ? (
+            {!summary ? (
+              <div className="h-9 flex items-center"><Loader2 className="size-4 animate-spin text-zinc-600" /></div>
+            ) : summary.top_link ? (
               <div>
                 <p className="text-lg font-semibold text-white truncate">{summary.top_link.short_code}</p>
                 <p className="text-sm text-zinc-500 truncate">{summary.top_link.original_url}</p>

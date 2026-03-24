@@ -19,11 +19,14 @@ export function ApiKeysSection() {
   const [newKey, setNewKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchKeys = useCallback(async () => {
     if (!accessToken) return;
+    setLoading(true);
     const res = await apiFetch<{ keys: ApiKeyItem[] }>("/api/keys", { token: accessToken });
     if (res.data) setKeys(res.data.keys);
+    setLoading(false);
   }, [accessToken]);
 
   useEffect(() => {
@@ -96,7 +99,11 @@ export function ApiKeysSection() {
       )}
 
       {/* Keys table */}
-      {keys.length > 0 ? (
+      {loading ? (
+        <div className="flex justify-center py-4">
+          <Loader2 className="size-5 animate-spin text-zinc-500" />
+        </div>
+      ) : keys.length > 0 ? (
         <table className="w-full">
           <thead>
             <tr className="border-b border-zinc-800">

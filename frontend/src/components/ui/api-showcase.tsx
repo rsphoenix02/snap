@@ -11,7 +11,7 @@ const tabs = [
   {
     name: "cURL",
     lang: "bash",
-    code: `curl -X POST https://snap.dev/api/v1/shorten \\
+    code: `curl -X POST https://snapurl.click/api/v1/shorten \\
   -H "Authorization: Bearer sk_live_..." \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -25,7 +25,7 @@ const tabs = [
     code: `import requests
 
 response = requests.post(
-    "https://snap.dev/api/v1/shorten",
+    "https://snapurl.click/api/v1/shorten",
     headers={
         "Authorization": "Bearer sk_live_...",
         "Content-Type": "application/json",
@@ -41,7 +41,7 @@ print(response.json())`,
     name: "JavaScript",
     lang: "javascript",
     code: `const response = await fetch(
-  "https://snap.dev/api/v1/shorten",
+  "https://snapurl.click/api/v1/shorten",
   {
     method: "POST",
     headers: {
@@ -62,7 +62,7 @@ const data = await response.json();`,
 const maxCodeLines = Math.max(...tabs.map((t) => t.code.split("\n").length));
 
 const responseJson = `{
-  "short_url": "https://snap.dev/my-link",
+  "short_url": "https://snapurl.click/my-link",
   "original_url": "https://example.com/very-long-path",
   "custom_code": "my-link",
   "created_at": "2026-03-22T10:30:00Z",

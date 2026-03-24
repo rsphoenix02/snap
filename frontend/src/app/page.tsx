@@ -264,8 +264,8 @@ export default function Home() {
           {/* Attribution */}
           <p className="text-sm text-zinc-400">
             Built by{" "}
-            <a href="#" className="text-white transition-colors hover:text-red-400">
-              Your Name
+            <a href="https://www.linkedin.com/in/saquibahmed02/" target="_blank" rel="noopener noreferrer" className="text-white transition-colors hover:text-red-400">
+              Saquib
             </a>
           </p>
 

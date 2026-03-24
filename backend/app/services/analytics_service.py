@@ -93,6 +93,19 @@ async def get_referrers(db: AsyncSession, link_id: int) -> list[dict]:
     return [{"source": row.source, "count": row.cnt} for row in result.all()]
 
 
+async def get_geo_breakdown(db: AsyncSession, link_id: int) -> list[dict]:
+    result = await db.execute(
+        select(
+            func.coalesce(Click.country, "Unknown").label("country"),
+            func.count(Click.id).label("cnt"),
+        )
+        .where(Click.link_id == link_id)
+        .group_by(text("country"))
+        .order_by(text("cnt DESC"))
+    )
+    return [{"country": row.country, "count": row.cnt} for row in result.all()]
+
+
 async def get_devices(db: AsyncSession, link_id: int) -> dict:
     devices_result = await db.execute(
         select(Click.device_type, func.count(Click.id).label("cnt"))

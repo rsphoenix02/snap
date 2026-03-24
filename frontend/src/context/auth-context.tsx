@@ -38,19 +38,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading: true,
   });
 
-  // Silent refresh on mount
+  // Silent refresh on mount — single call returns token + user
   useEffect(() => {
     const tryRefresh = async () => {
       try {
-        const res = await apiFetch<{ access_token: string }>("/api/auth/refresh", {
+        const res = await apiFetch<{ access_token: string; user: User }>("/api/auth/refresh", {
           method: "POST",
         });
-        if (res.data?.access_token) {
-          const meRes = await apiFetch<User>("/api/auth/me", {
-            token: res.data.access_token,
-          });
+        if (res.data?.access_token && res.data?.user) {
           setState({
-            user: meRes.data ?? null,
+            user: res.data.user,
             accessToken: res.data.access_token,
             isLoading: false,
           });

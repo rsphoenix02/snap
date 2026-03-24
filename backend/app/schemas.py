@@ -158,6 +158,15 @@ class DevicesResponse(BaseModel):
     browsers: list[BrowserItem]
 
 
+class GeoItem(BaseModel):
+    country: str
+    count: int
+
+
+class GeoResponse(BaseModel):
+    geo: list[GeoItem]
+
+
 # --- Dashboard ---
 
 class TopLinkSummary(BaseModel):

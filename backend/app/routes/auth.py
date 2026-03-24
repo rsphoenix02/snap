@@ -125,7 +125,12 @@ async def refresh(
         raise HTTPException(status_code=401, detail="User not found")
 
     new_access = create_access_token(user.id)
-    return ApiResponse(data={"access_token": new_access})
+    return ApiResponse(
+        data=AuthResponse(
+            access_token=new_access,
+            user=_user_to_response(user),
+        ).model_dump()
+    )
 
 
 @router.post("/logout")

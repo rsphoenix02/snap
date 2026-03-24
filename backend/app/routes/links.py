@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -19,6 +20,17 @@ from app.schemas import (
 from app.services.url_service import generate_short_code
 
 router = APIRouter(prefix="/api/links", tags=["links"])
+
+LINKS_TTL = 30  # seconds
+
+
+async def _invalidate_user_cache(user_id: str | int) -> None:
+    """Delete dashboard + first-page links cache for a user."""
+    try:
+        await redis_client.delete(f"dash:summary:{user_id}")
+        await redis_client.delete(f"dash:links:{user_id}:1:20")
+    except Exception:
+        pass
 
 
 def _link_to_response(link: Link, include_url: bool = True) -> dict:
@@ -76,6 +88,8 @@ async def create_link(
     await db.commit()
     await db.refresh(link)
 
+    await _invalidate_user_cache(user.id)
+
     return ApiResponse(data=_link_to_response(link))
 
 
@@ -86,6 +100,14 @@ async def list_links(
     user: User = Depends(get_current_user_or_api_key),
     db: AsyncSession = Depends(get_db),
 ):
+    cache_key = f"dash:links:{user.id}:{page}:{limit}"
+    try:
+        cached = await redis_client.get(cache_key)
+        if cached:
+            return ApiResponse(data=json.loads(cached))
+    except Exception:
+        pass
+
     offset = (page - 1) * limit
 
     total_result = await db.execute(
@@ -102,14 +124,19 @@ async def list_links(
     )
     links = result.scalars().all()
 
-    return ApiResponse(
-        data=PaginatedLinksResponse(
-            links=[LinkResponse(**_link_to_response(l)) for l in links],
-            total=total,
-            page=page,
-            limit=limit,
-        ).model_dump()
-    )
+    data = PaginatedLinksResponse(
+        links=[LinkResponse(**_link_to_response(l)) for l in links],
+        total=total,
+        page=page,
+        limit=limit,
+    ).model_dump()
+
+    try:
+        await redis_client.set(cache_key, json.dumps(data, default=str), ex=LINKS_TTL)
+    except Exception:
+        pass
+
+    return ApiResponse(data=data)
 
 
 @router.get("/{code}")
@@ -150,6 +177,7 @@ async def update_link(
         await db.refresh(link)
         # Invalidate cached redirect so new values take effect immediately
         await redis_client.delete(f"url:{link.short_code}")
+        await _invalidate_user_cache(user.id)
 
     return ApiResponse(data=_link_to_response(link))
 
@@ -174,5 +202,6 @@ async def delete_link(
 
     # Invalidate Redis cache
     await redis_client.delete(f"url:{code}")
+    await _invalidate_user_cache(user.id)
 
     return ApiResponse(data={"message": "Link deactivated"})

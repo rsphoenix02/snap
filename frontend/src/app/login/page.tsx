@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Zap, Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
@@ -10,6 +10,9 @@ import { CharacterScene } from "@/components/ui/animated-characters";
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+
+  // Prefetch dashboard bundle so navigation is instant after login
+  useEffect(() => { router.prefetch("/dashboard"); }, [router]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

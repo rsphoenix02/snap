@@ -13,12 +13,19 @@ import {
 } from "recharts";
 import { useAuth } from "@/context/auth-context";
 import { apiFetch } from "@/lib/api";
+import { GeoHeatmap } from "./geo-heatmap";
+
+interface GeoItem {
+  country: string;
+  count: number;
+}
 
 export interface AnalyticsData {
   points: TimePoint[];
   referrers: ReferrerItem[];
   devices: DeviceItem[];
   browsers: BrowserItem[];
+  geo: GeoItem[];
 }
 
 export interface AnalyticsCacheEntry {
@@ -63,6 +70,7 @@ export function LinkDetail({ code, active, onUpdate, cached, onDataLoaded }: Pro
   const [referrers, setReferrers] = useState<ReferrerItem[]>(cached?.data.referrers ?? []);
   const [devices, setDevices] = useState<DeviceItem[]>(cached?.data.devices ?? []);
   const [browsers, setBrowsers] = useState<BrowserItem[]>(cached?.data.browsers ?? []);
+  const [geo, setGeo] = useState<GeoItem[]>(cached?.data.geo ?? []);
   const [loading, setLoading] = useState(!cached);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -73,21 +81,24 @@ export function LinkDetail({ code, active, onUpdate, cached, onDataLoaded }: Pro
     if (!accessToken) return;
     setLoading(true);
 
-    const [clicksRes, refRes, devRes] = await Promise.all([
+    const [clicksRes, refRes, devRes, geoRes] = await Promise.all([
       apiFetch<{ points: TimePoint[] }>(`/api/links/${code}/clicks?range=${range}`, { token: accessToken }),
       apiFetch<{ referrers: ReferrerItem[] }>(`/api/links/${code}/referrers`, { token: accessToken }),
       apiFetch<{ devices: DeviceItem[]; browsers: BrowserItem[] }>(`/api/links/${code}/devices`, { token: accessToken }),
+      apiFetch<{ geo: GeoItem[] }>(`/api/links/${code}/geo`, { token: accessToken }),
     ]);
 
     const newPoints = clicksRes.data?.points ?? [];
     const newReferrers = refRes.data?.referrers ?? [];
     const newDevices = devRes.data?.devices ?? [];
     const newBrowsers = devRes.data?.browsers ?? [];
+    const newGeo = geoRes.data?.geo ?? [];
 
     setPoints(newPoints);
     setReferrers(newReferrers);
     setDevices(newDevices);
     setBrowsers(newBrowsers);
+    setGeo(newGeo);
     setLoading(false);
 
     onDataLoaded?.(code, {
@@ -97,6 +108,7 @@ export function LinkDetail({ code, active, onUpdate, cached, onDataLoaded }: Pro
         referrers: newReferrers,
         devices: newDevices,
         browsers: newBrowsers,
+        geo: newGeo,
       },
     });
   }, [accessToken, code, range, onDataLoaded]);
@@ -172,6 +184,9 @@ export function LinkDetail({ code, active, onUpdate, cached, onDataLoaded }: Pro
           <p className="text-sm text-zinc-500 text-center py-8">No click data for this period</p>
         )}
       </div>
+
+      {/* Geographic heatmap */}
+      <GeoHeatmap data={geo} />
 
       {/* Referrers + Devices side by side */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

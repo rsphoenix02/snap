@@ -87,7 +87,7 @@ export const ApiCard = () => (
         style={{ fontFamily: "var(--font-geist-mono), monospace" }}
       >
         <div><span className="text-red-400">POST</span> <span className="text-zinc-400">/api/v1/shorten</span></div>
-        <div className="text-zinc-600">{"// \u2192 { short_url: \"snap.dev/abc\" }"}</div>
+        <div className="text-zinc-600">{"// \u2192 { short_url: \"snapurl.click/abc\" }"}</div>
       </div>
     </CardContent>
   </Card>
@@ -138,7 +138,7 @@ export const ShortCodesCard = () => {
             style={{ fontFamily: "var(--font-geist-mono), monospace" }}
           >
             <Link2 className="mr-2 h-3 w-3 text-red-500" />
-            snap.dev/
+            snapurl.click/
           </div>
           <div
             className="flex h-8 items-center rounded-r-md border border-l-0 border-red-500/30 bg-red-500/10 px-3 text-xs text-red-400"

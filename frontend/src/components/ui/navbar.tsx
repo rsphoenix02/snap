@@ -128,7 +128,6 @@ export const Header = () => {
                                 <Link href="/dashboard" className="text-sm text-zinc-400 hover:text-white transition-colors">
                                     Dashboard
                                 </Link>
-                                <span className="text-sm text-zinc-500">{user.name}</span>
                                 <Button variant="outline" size="sm" onClick={logout}>
                                     <span>Logout</span>
                                 </Button>
